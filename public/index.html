@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>NodePusher · 每日节点推送</title>
+<style>
+  :root {
+    --bg: #0b0f17;
+    --panel: #131a26;
+    --panel-2: #0f1520;
+    --line: #1f2a3a;
+    --text: #e6edf7;
+    --dim: #8b9bb4;
+    --accent: #4f8cff;
+    --ok: #35d07f;
+    --warn: #f5a623;
+    --err: #ff5c5c;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: radial-gradient(1200px 600px at 20% -10%, #16233a 0%, var(--bg) 55%);
+    color: var(--text); font: 14px/1.6 "Segoe UI", "Microsoft YaHei", system-ui, sans-serif;
+    min-height: 100vh;
+  }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 28px 20px 60px; }
+  header { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-bottom: 22px; }
+  .logo {
+    width: 40px; height: 40px; border-radius: 11px; display: grid; place-items: center;
+    background: linear-gradient(135deg, #4f8cff, #7a5cff); font-size: 20px;
+  }
+  h1 { font-size: 19px; margin: 0; font-weight: 650; letter-spacing: .2px; }
+  .sub { color: var(--dim); font-size: 12.5px; }
+  .pill {
+    margin-left: auto; padding: 6px 13px; border-radius: 999px; font-size: 12.5px;
+    border: 1px solid var(--line); background: var(--panel); color: var(--dim);
+  }
+  .pill.run { color: var(--accent); border-color: #24406e; }
+  .pill.ok { color: var(--ok); border-color: #1e4a35; }
+  .pill.err { color: var(--err); border-color: #4a2020; }
+
+  .grid { display: grid; grid-template-columns: 1.55fr 1fr; gap: 16px; }
+  @media (max-width: 860px) { .grid { grid-template-columns: 1fr; } }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 18px; }
+  .card h2 { font-size: 13px; margin: 0 0 14px; color: var(--dim); font-weight: 600; letter-spacing: .5px; text-transform: uppercase; }
+
+  .steps { display: flex; gap: 6px; margin-bottom: 14px; }
+  .steps i { flex: 1; height: 5px; border-radius: 3px; background: #1b2534; transition: .3s; }
+  .steps i.done { background: #2b6b4a; }
+  .steps i.active { background: var(--accent); box-shadow: 0 0 12px rgba(79,140,255,.7); }
+  .stepname { font-size: 15px; font-weight: 600; }
+  .detail { color: var(--dim); font-size: 12.5px; min-height: 19px; }
+
+  .btns { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
+  button, a.btn {
+    appearance: none; border: 1px solid var(--line); background: #18212f; color: var(--text);
+    padding: 10px 16px; border-radius: 10px; font-size: 13.5px; cursor: pointer; text-decoration: none;
+    transition: .15s; display: inline-flex; align-items: center; gap: 7px;
+  }
+  button:hover, a.btn:hover { background: #1e2a3c; border-color: #2c3d55; }
+  button.primary { background: linear-gradient(135deg, #3f7dfc, #6a5bff); border: none; font-weight: 600; }
+  button.primary:hover { filter: brightness(1.08); }
+  button:disabled { opacity: .45; cursor: not-allowed; }
+
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .stat { background: var(--panel-2); border: 1px solid var(--line); border-radius: 11px; padding: 11px 12px; }
+  .stat b { display: block; font-size: 20px; font-weight: 680; letter-spacing: .3px; }
+  .stat span { color: var(--dim); font-size: 11.5px; }
+
+  .log {
+    background: #070b12; border: 1px solid var(--line); border-radius: 11px; padding: 12px;
+    height: 300px; overflow: auto; font: 12px/1.7 "Cascadia Mono", Consolas, monospace; color: #a9bad2;
+  }
+  .log div { white-space: pre-wrap; word-break: break-all; }
+  .log .ok { color: var(--ok); }
+  .log .err { color: var(--err); }
+
+  .runs a { display: flex; justify-content: space-between; padding: 8px 10px; border-radius: 8px; color: var(--text); text-decoration: none; font-size: 12.5px; }
+  .runs a:hover { background: #18212f; }
+  .runs .sz { color: var(--dim); }
+  .empty { color: var(--dim); font-size: 12.5px; }
+  .top { display: flex; gap: 8px; align-items: baseline; }
+  .top b { font-size: 26px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo">⚡</div>
+    <div>
+      <h1>NodePusher</h1>
+      <div class="sub">每天从 GitHub 抓取免费节点 · 实测筛选 · 生成 Clash yaml 并推送</div>
+    </div>
+    <div class="pill" id="statusPill">空闲</div>
+  </header>
+
+  <div class="grid">
+    <div>
+      <div class="card" style="margin-bottom:16px">
+        <h2>当前任务</h2>
+        <div class="steps" id="steps"></div>
+        <div class="stepname" id="stepName">等待调度</div>
+        <div class="detail" id="detail"></div>
+        <div class="btns">
+          <button class="primary" id="runBtn">▶ 立即运行</button>
+          <a class="btn" href="/latest.yaml" id="dlBtn">⬇ 下载最新 yaml</a>
+          <a class="btn" href="/api/runs" target="_blank">📄 历史记录</a>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>筛选漏斗</h2>
+        <div class="stats">
+          <div class="stat"><b id="cRaw">-</b><span>抓取</span></div>
+          <div class="stat"><b id="cDedup">-</b><span>去重</span></div>
+          <div class="stat"><b id="cTcp">-</b><span>TCP 可连</span></div>
+          <div class="stat"><b id="cDelay">-</b><span>延迟存活</span></div>
+          <div class="stat"><b id="cTested">-</b><span>测速通过</span></div>
+          <div class="stat"><b id="cFinal">-</b><span>最终节点</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="card" style="margin-bottom:16px">
+        <h2>今日结果</h2>
+        <div class="top"><b id="lastCount">-</b><span class="sub">个节点</span></div>
+        <div class="sub" id="lastMeta">还没有生成过</div>
+        <div class="sub" id="nextRun" style="margin-top:10px"></div>
+      </div>
+      <div class="card runs">
+        <h2>最近生成</h2>
+        <div id="runsList"><div class="empty">暂无</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:16px">
+    <h2>运行日志</h2>
+    <div class="log" id="log"></div>
+  </div>
+</div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+let running = false;
+
+function paintSteps(idx, total, status) {
+  const box = $("steps");
+  if (box.children.length !== total) {
+    box.innerHTML = Array.from({ length: total }, () => "<i></i>").join("");
+  }
+  [...box.children].forEach((el, i) => {
+    el.className = i + 1 < idx ? "done" : i + 1 === idx ? (status === "running" ? "active" : "done") : "";
+  });
+}
+
+function fmtTime(iso) {
+  if (!iso) return "-";
+  return new Date(iso).toLocaleString("zh-CN", { hour12: false });
+}
+
+async function tick() {
+  try {
+    const s = await (await fetch("/api/status")).json();
+    const pill = $("statusPill");
+    pill.className = "pill " + (s.status === "running" ? "run" : s.status === "ok" ? "ok" : s.status === "failed" ? "err" : "");
+    pill.textContent = s.status === "running" ? "运行中" : s.status === "ok" ? "已完成" : s.status === "failed" ? "失败" : "空闲";
+
+    paintSteps(s.stepIndex, s.stepTotal, s.status);
+    $("stepName").textContent = s.step || "等待调度";
+    $("detail").textContent = s.detail || (s.status === "failed" ? "" : "");
+
+    $("cRaw").textContent = s.counts?.raw ?? "-";
+    $("cDedup").textContent = s.counts?.dedup ?? "-";
+    $("cTcp").textContent = s.counts?.tcp ?? "-";
+    $("cDelay").textContent = s.counts?.delay ?? "-";
+    $("cTested").textContent = s.counts?.tested ?? "-";
+    $("cFinal").textContent = s.lastResult?.count ?? "-";
+
+    if (s.lastResult) {
+      $("lastCount").textContent = s.lastResult.count;
+      $("lastMeta").textContent = `最快 ${s.lastResult.topSpeed} · ${s.lastResult.file} · 耗时 ${(s.lastResult.durationMs / 1000).toFixed(0)}s`;
+    }
+    $("nextRun").textContent = s.nextRunAt ? `下次自动运行：${fmtTime(s.nextRunAt)}` : "自动运行已关闭";
+
+    const logBox = $("log");
+    const atBottom = logBox.scrollTop + logBox.clientHeight >= logBox.scrollHeight - 30;
+    logBox.innerHTML = (s.logs || []).map((l) =>
+      `<div class="${l.includes("✘") || l.includes("失败") ? "err" : l.includes("✔") ? "ok" : ""}">${l.replace(/[<>&]/g, c => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;" }[c]))}</div>`
+    ).join("");
+    if (atBottom) logBox.scrollTop = logBox.scrollHeight;
+
+    running = s.status === "running";
+    $("runBtn").disabled = running;
+  } catch (e) { /* 服务刚启动时忽略 */ }
+}
+
+async function loadRuns() {
+  try {
+    const list = await (await fetch("/api/runs")).json();
+    $("runsList").innerHTML = list.length
+      ? list.slice(0, 8).map((r) =>
+          `<a href="/runs/${r.file}"><span>${r.file}</span><span class="sz">${(r.size / 1024).toFixed(0)} KB</span></a>`
+        ).join("")
+      : '<div class="empty">暂无</div>';
+  } catch {}
+}
+
+$("runBtn").onclick = async () => {
+  $("runBtn").disabled = true;
+  await fetch("/api/run", { method: "POST" });
+  tick();
+};
+
+tick();
+loadRuns();
+setInterval(tick, 1500);
+setInterval(loadRuns, 15000);
+</script>
+</body>
+</html>

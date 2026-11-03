@@ -1,0 +1,68 @@
+{
+  "port": 8787,
+  "runOnStart": false,
+  "schedule": {
+    "enabled": true,
+    "time": "09:00"
+  },
+  "sources": [
+    {
+      "name": "anaer/Sub",
+      "url": "https://raw.githubusercontent.com/anaer/Sub/main/clash.yaml"
+    },
+    {
+      "name": "chengaopan/AutoMergePublicNodes",
+      "url": "https://raw.githubusercontent.com/chengaopan/AutoMergePublicNodes/master/list.meta.yml"
+    },
+    {
+      "name": "lanzm/MetaFetch",
+      "url": "https://raw.githubusercontent.com/lanzm/MetaFetch/master/list.meta.yml"
+    },
+    {
+      "name": "sunmiao4458/free-proxy-airport",
+      "url": "https://raw.githubusercontent.com/sunmiao4458/free-proxy-airport/main/docs/clash.yaml"
+    },
+    {
+      "name": "mahdibland/V2RayAggregator",
+      "url": "https://raw.githubusercontent.com/mahdibland/V2RayAggregator/master/Eternity.yml"
+    },
+    {
+      "name": "free-nodes/clashfree",
+      "url": "https://raw.githubusercontent.com/free-nodes/clashfree/main/clash.yml",
+      "disabled": true
+    }
+  ],
+  "mirrors": [
+    "https://ghproxy.net/",
+    "https://gh-proxy.com/"
+  ],
+  "limits": {
+    "fetchTimeoutMs": 40000,
+    "tcpTimeoutMs": 2500,
+    "tcpConcurrency": 250,
+    "delayTimeoutMs": 5000,
+    "delayConcurrency": 40,
+    "delayRounds": 3,
+    "speedWindowMs": 5000,
+    "maxSpeedTest": 120,
+    "speedConcurrency": 2,
+    "testUrl": "https://www.gstatic.com/generate_204"
+  },
+  "core": {
+    "binPath": "G:\\deepseek\\NodePusher\\bin\\mihomo.exe",
+    "apiPort": 19099,
+    "mixedPort": 18790,
+    "secret": "nodepusher"
+  },
+  "output": {
+    "mixedPort": 7890,
+    "minKbps": 100,
+    "maxEncrypted": 15,
+    "maxPlain": 25,
+    "keepRuns": 7
+  },
+  "push": {
+    "toast": true,
+    "webhook": ""
+  }
+}
